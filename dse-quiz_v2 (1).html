@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DSE 詞解／默書練習</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+    .card { background: white; max-width: 700px; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    select, input, button { margin: 10px 0; padding: 8px; font-size: 1em; }
+    .option { display: block; margin: 5px 0; }
+    .feedback { margin-top: 10px; font-weight: bold; }
+    .stats { font-size: 0.9em; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>DSE 中文練習</h2>
+    <label for="mode">選擇模式：</label>
+    <select id="mode" onchange="startQuiz()">
+      <option value="vocab">詞解練習</option>
+      <option value="cloze">默書填空</option>
+    </select>
+    <br />
+    <label for="category">選擇範疇：</label>
+    <select id="category" onchange="startQuiz()">
+      <option value="all">全部</option>
+      <option value="仁">仁</option>
+      <option value="孝">孝</option>
+      <option value="君子">君子</option>
+    </select>
+    <p id="question">載入中...</p>
+    <div id="options"></div>
+    <button onclick="nextQuestion()" id="nextBtn">下一題</button>
+    <p id="feedback" class="feedback"></p>
+    <p class="stats" id="stats"></p>
+    <p class="stats" id="progress"></p>
+  </div>
+
+<script>
+const vocabQuestions = [
+  {
+    category: "仁",
+    question: "「克己」在『克己復禮為仁』中是甚麼意思？",
+    options: ["A. 犧牲自己", "B. 控制自己", "C. 克服困難", "D. 謹慎自守"],
+    answerIndex: 1,
+    explanation: "克己：抑制自己的私慾。"
+  }
+];
+
+const clozeQuestions = [
+  {
+    type: "cloze",
+    category: "仁",
+    sentence: "克己____為仁",
+    answer: "復禮",
+    explanation: "克制自己、恢復合乎禮的行為就是仁。"
+  }
+];
+
+let questions = [];
+let currentIndex = -1;
+let correctCount = 0;
+let totalCount = 0;
+let usedIndexes = [];
+let results = [];
+
+function startQuiz() {
+  const mode = document.getElementById("mode").value;
+  const category = document.getElementById("category").value;
+  const base = mode === "vocab" ? vocabQuestions : clozeQuestions;
+  questions = category === "all" ? base : base.filter(q => q.category === category);
+  currentIndex = -1;
+  correctCount = 0;
+  totalCount = 0;
+  usedIndexes = [];
+  results = [];
+  document.getElementById("feedback").textContent = "";
+  nextQuestion();
+}
+
+function nextQuestion() {
+  document.getElementById("feedback").textContent = "";
+  if (usedIndexes.length >= questions.length) {
+    document.getElementById("question").textContent = "✅ 全部完成！";
+    document.getElementById("options").innerHTML = "";
+    return;
+  }
+
+  let index;
+  do {
+    index = Math.floor(Math.random() * questions.length);
+  } while (usedIndexes.includes(index));
+  usedIndexes.push(index);
+  currentIndex = index;
+  const q = questions[index];
+
+  if (q.type === "cloze") {
+    const html = q.sentence.replace(q.answer, "<input id='fillInput' type='text' style='width:120px; padding:5px; border:1px solid #ccc; border-radius:4px;' placeholder='輸入答案' />");
+    document.getElementById("question").innerHTML = html;
+    document.getElementById("options").innerHTML = "<button onclick='checkClozeAnswer()'>提交</button>";
+    return;
+  }
+
+  document.getElementById("question").textContent = q.question;
+  const optDiv = document.getElementById("options");
+  optDiv.innerHTML = "";
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = opt;
+    btn.className = "option";
+    btn.onclick = () => checkAnswer(i);
+    optDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(selected) {
+  const q = questions[currentIndex];
+  totalCount++;
+  const feedback = document.getElementById("feedback");
+  if (selected === q.answerIndex) {
+    correctCount++;
+    feedback.textContent = "✅ 正確：" + q.explanation;
+    feedback.style.color = "green";
+  } else {
+    feedback.textContent = "❌ 錯誤，答案是：" + q.options[q.answerIndex] + "。" + q.explanation;
+    feedback.style.color = "red";
+  }
+}
+
+function checkClozeAnswer() {
+  const q = questions[currentIndex];
+  const userInput = document.getElementById("fillInput").value.trim();
+  totalCount++;
+  const feedback = document.getElementById("feedback");
+  if (userInput === q.answer) {
+    correctCount++;
+    feedback.textContent = "✅ 正確：" + q.explanation;
+    feedback.style.color = "green";
+  } else {
+    feedback.textContent = "❌ 錯誤，答案是：" + q.answer + "。" + q.explanation;
+    feedback.style.color = "red";
+  }
+}
+startQuiz();
+</script>
+</body>
+</html>
